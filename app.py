@@ -155,7 +155,6 @@ def main():
 
     st.markdown("## ☁️ Word Cloud")
     wordcloud = calc_wordcloud()
-    st.write(list(wordcloud.words_.keys()))
     st.image(wordcloud.to_array())
 
     st.markdown("## 📰 Noticias por fuente")
