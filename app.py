@@ -1,12 +1,15 @@
 import os
+from datetime import date
 
 import matplotlib.pyplot as plt
 import nltk
 import pandas as pd
 import streamlit as st
+import torch
 from nltk.corpus import stopwords
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
+from transformers import BertTokenizerFast, EncoderDecoderModel, pipeline
 from wordcloud import WordCloud
 
 
@@ -60,6 +63,46 @@ def get_news_by_source():
     )
 
     return news_by_source
+
+
+@st.cache_resource(ttl=60 * 60 * 24)
+def get_todays_news_summary():
+    """
+    Retrieves today's news and generates a summary using a pre-trained BERT model.
+
+    Returns:
+        str: A string containing the summaries of today's news articles.
+    """
+    model_name = "mrm8488/bert2bert_shared-spanish-finetuned-summarization"
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    tokenizer = BertTokenizerFast.from_pretrained(model_name)
+    model = EncoderDecoderModel.from_pretrained(model_name).to(device)
+
+    today = date.today()
+    news_df = get_all_news()
+    news_df["date_pulled"] = pd.to_datetime(news_df["date_pulled"])
+
+    news_today = news_df[news_df["date_pulled"].dt.date == today]
+
+    summaries = []
+
+    for content in news_today["content"]:
+        inputs = tokenizer(
+            [content],
+            padding="max_length",
+            truncation=True,
+            max_length=512,
+            return_tensors="pt",
+        )
+        input_ids = inputs.input_ids.to(device)
+        attention_mask = inputs.attention_mask.to(device)
+        output = model.generate(input_ids, attention_mask=attention_mask)
+
+        summaries.append(tokenizer.decode(output[0], skip_special_tokens=True))
+
+    all_news_summary = "\n".join(f"- {summary}" for summary in summaries)
+
+    return all_news_summary
 
 
 @st.cache_resource(ttl=60 * 60 * 24)
@@ -160,6 +203,11 @@ def main():
 
     st.markdown("## 📰 Noticias por fuente")
     get_news_by_source()
+
+    st.markdown("## 📰 Noticias del día")
+    st.markdown("Te presentamos un resumen de las noticias del día.")
+    todays_news_summary = get_todays_news_summary()
+    st.markdown(todays_news_summary)
 
 
 if __name__ == "__main__":
