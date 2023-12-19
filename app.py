@@ -78,8 +78,9 @@ def calc_wordcloud():
     text = " ".join(news_df["content"])
 
     stop_words = set(stopwords.words("spanish"))
-    with open("additional_stopwords.txt", "r") as f:
+    with open("additional_stopwords.txt", "r", encoding="utf-8") as f:
         additional_stop_words = [word.strip() for word in f.readlines()]
+
     stop_words.update(additional_stop_words)
 
     wordcloud = WordCloud(
