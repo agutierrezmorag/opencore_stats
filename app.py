@@ -29,6 +29,12 @@ def db_connection():
 
 @st.cache_resource(ttl=60 * 60 * 24)
 def get_news_by_source():
+    """
+    Retrieves news data from various sources and displays the count of news articles by source.
+
+    Returns:
+        DataFrame: A DataFrame containing the count of news articles by source.
+    """
     logos = {
         "adn": "https://opencore.onrender.com/static/img/source_logos/adn.png",
         "chvn": "https://opencore.onrender.com/static/img/source_logos/chvn.png",
