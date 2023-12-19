@@ -65,7 +65,14 @@ def get_news_by_source():
     return news_by_source
 
 
+@st.cache_resource(ttl=60 * 60 * 24)
 def get_todays_news_summary():
+    """
+    Retrieves today's news from a DataFrame and generates a summary for each news article using a pre-trained BERT model.
+
+    Returns:
+        str: A string containing the summaries of today's news articles.
+    """
     model_name = "mrm8488/bert2bert_shared-spanish-finetuned-summarization"
     device = "cuda" if torch.cuda.is_available() else "cpu"
     tokenizer = BertTokenizerFast.from_pretrained(model_name)
@@ -77,16 +84,16 @@ def get_todays_news_summary():
 
     news_today = news_df[news_df["date_pulled"].dt.date == today]
 
-    batch_size = 8  # Adjust this value based on your system's capabilities
+    news_today = news_today.sample(n=3)
+
     summaries = []
 
-    for i in range(0, len(news_today), batch_size):
-        batch = news_today.iloc[i : i + batch_size]
-        contents = batch["content"].tolist()
-        links = batch["link"].tolist()
+    for _, row in news_today.iterrows():
+        content = row["content"]
+        link = row["link"]
 
         inputs = tokenizer(
-            contents,
+            content,
             padding="max_length",
             truncation=True,
             max_length=512,
@@ -94,11 +101,10 @@ def get_todays_news_summary():
         )
         input_ids = inputs.input_ids.to(device)
         attention_mask = inputs.attention_mask.to(device)
-        outputs = model.generate(input_ids, attention_mask=attention_mask)
+        output = model.generate(input_ids, attention_mask=attention_mask)[0]
 
-        for output, link in zip(outputs, links):
-            summary = tokenizer.decode(output, skip_special_tokens=True)
-            summaries.append(f"- {summary} [link]({link}).")
+        summary = tokenizer.decode(output, skip_special_tokens=True)
+        summaries.append(f"- {summary} ([Fuente]({link}).)")
 
     all_news_summary = "\n".join(summaries)
 
