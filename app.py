@@ -28,6 +28,35 @@ def db_connection():
 
 
 @st.cache_resource(ttl=60 * 60 * 24)
+def get_news_by_source():
+    logos = {
+        "adn": "https://opencore.onrender.com/static/img/source_logos/adn.png",
+        "chvn": "https://opencore.onrender.com/static/img/source_logos/chvn.png",
+        "cnn": "https://opencore.onrender.com/static/img/source_logos/cnn.png",
+        "dinamo": "https://opencore.onrender.com/static/img/source_logos/dinamo.png",
+        "elmostrador": "https://opencore.onrender.com/static/img/source_logos/elmostrador.png",
+        "latercera": "https://opencore.onrender.com/static/img/source_logos/latercera.png",
+        "meganoticias": "https://opencore.onrender.com/static/img/source_logos/meganoticias.png",
+        "t13": "https://opencore.onrender.com/static/img/source_logos/t13.png",
+    }
+
+    news_df = get_all_news()
+    news_df["logo"] = news_df["website"].map(logos)
+
+    news_by_source = st.dataframe(
+        news_df[["logo", "website"]].value_counts(),
+        use_container_width=True,
+        column_config={
+            "logo": st.column_config.ImageColumn("Logo", width="small"),
+            "website": "Nombre",
+            "count": "Total",
+        },
+    )
+
+    return news_by_source
+
+
+@st.cache_resource(ttl=60 * 60 * 24)
 def calc_wordcloud():
     """
     Calculates and returns a word cloud based on the content of news articles.
@@ -39,32 +68,38 @@ def calc_wordcloud():
     nltk.download("stopwords", download_dir=st.secrets.nltk.download_path)
     db = db_connection()
     news_df = get_all_news()
+
     text = " ".join(news_df["content"])
-    spanish_stop_words = set(stopwords.words("spanish"))
+
+    stop_words = set(stopwords.words("spanish"))
+    with open("additional_stopwords.txt", "r") as f:
+        additional_stop_words = [word.strip() for word in f.readlines()]
+    stop_words.update(additional_stop_words)
+
     wordcloud = WordCloud(
-        stopwords=spanish_stop_words,
+        stopwords=stop_words,
         background_color="white",
         contour_color="blue",
         colormap="viridis",
         width=800,
         height=400,
     ).generate(text)
+
     return wordcloud
 
 
 @st.cache_resource(ttl=60 * 60 * 24)
 def get_all_news():
     """
-    Retrieves all news from the database.
+    Retrieves all news from the database and returns them as a DataFrame.
 
     Returns:
-        list: A list of news objects.
+        pandas.DataFrame: A DataFrame containing all the news.
     """
     db = db_connection()
     news_cursor = db.news_news.find()
     news_df = pd.DataFrame(list(news_cursor))
     news_df["_id"] = news_df["_id"].astype(str)
-    print(f"Number of rows in DataFrame: {len(news_df)}")
     return news_df
 
 
@@ -114,30 +149,11 @@ def main():
 
     st.markdown("## ☁️ Word Cloud")
     wordcloud = calc_wordcloud()
+    st.write(list(wordcloud.words_.keys()))
     st.image(wordcloud.to_array())
 
     st.markdown("## 📰 Noticias por fuente")
-    logos = {
-        "adn": "https://opencore.onrender.com/static/img/source_logos/adn.png",
-        "chvn": "https://opencore.onrender.com/static/img/source_logos/chvn.png",
-        "cnn": "https://opencore.onrender.com/static/img/source_logos/cnn.png",
-        "dinamo": "https://opencore.onrender.com/static/img/source_logos/dinamo.png",
-        "elmostrador": "https://opencore.onrender.com/static/img/source_logos/elmostrador.png",
-        "latercera": "https://opencore.onrender.com/static/img/source_logos/latercera.png",
-        "meganoticias": "https://opencore.onrender.com/static/img/source_logos/meganoticias.png",
-        "t13": "https://opencore.onrender.com/static/img/source_logos/t13.png",
-    }
-    news_df = get_all_news()
-    news_df["logo"] = news_df["website"].map(logos)
-    st.dataframe(
-        news_df[["logo", "website"]].value_counts(),
-        use_container_width=True,
-        column_config={
-            "logo": st.column_config.ImageColumn("Logo", width="small"),
-            "website": "Nombre",
-            "count": "Total",
-        },
-    )
+    get_news_by_source()
 
 
 if __name__ == "__main__":
