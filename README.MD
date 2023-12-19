@@ -22,18 +22,32 @@ Estadisticas del proyecto `openCore`. Taller de sistemas. UNAP 2023.
     cd opencore_stats
     ```
 
-3. Instala las dependencias.
+3. Crea un entorno virtual.
+    ```shell
+    python3 -m venv env
+    ```
+
+4. Activa el entorno virtual.
+    - En Windows:
+        ```shell
+        .\env\Scripts\activate
+        ```
+    - En Unix o MacOS:
+        ```shell
+        source env/bin/activate
+        ```
+
+5. Instala las dependencias.
     ```shell
     pip install -r requirements.txt
     ```
 
-4. Crea una carpeta `.streamlit`.
+6. Crea una carpeta `.streamlit`.
    ```shell
    mkdir .streamlit
    ```
 
-5. Mueve el archivo `secrets.toml` (disponible en los canales de comunicacion) a la carpeta recien creada.
-
+7. Mueve el archivo secrets.toml (disponible en los canales de comunicacion) a la carpeta recien creada.
 ## Uso
 
 1. Ejecuta la aplicación Streamlit.
