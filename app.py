@@ -65,10 +65,9 @@ def get_news_by_source():
     return news_by_source
 
 
-@st.cache_resource(ttl=60 * 60 * 24)
 def get_todays_news_summary():
     """
-    Retrieves today's news and generates a summary using a pre-trained BERT model.
+    Retrieves today's news articles and generates a summary for each article using a pre-trained model.
 
     Returns:
         str: A string containing the summaries of today's news articles.
@@ -86,7 +85,9 @@ def get_todays_news_summary():
 
     summaries = []
 
-    for content in news_today["content"]:
+    for _, row in news_today.iterrows():
+        content = row["content"]
+        link = row["link"]
         inputs = tokenizer(
             [content],
             padding="max_length",
@@ -98,9 +99,10 @@ def get_todays_news_summary():
         attention_mask = inputs.attention_mask.to(device)
         output = model.generate(input_ids, attention_mask=attention_mask)
 
-        summaries.append(tokenizer.decode(output[0], skip_special_tokens=True))
+        summary = tokenizer.decode(output[0], skip_special_tokens=True)
+        summaries.append(f"- {summary} [source]({link})")
 
-    all_news_summary = "\n".join(f"- {summary}" for summary in summaries)
+    all_news_summary = "\n".join(summaries)
 
     return all_news_summary
 
