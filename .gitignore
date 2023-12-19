@@ -160,3 +160,4 @@ cython_debug/
 #.idea/
 
 secrets.toml
+nltk_data/
