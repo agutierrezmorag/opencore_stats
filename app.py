@@ -66,12 +66,6 @@ def get_news_by_source():
 
 
 def get_todays_news_summary():
-    """
-    Retrieves today's news articles and generates a summary for each article using a pre-trained model.
-
-    Returns:
-        str: A string containing the summaries of today's news articles.
-    """
     model_name = "mrm8488/bert2bert_shared-spanish-finetuned-summarization"
     device = "cuda" if torch.cuda.is_available() else "cpu"
     tokenizer = BertTokenizerFast.from_pretrained(model_name)
@@ -83,13 +77,16 @@ def get_todays_news_summary():
 
     news_today = news_df[news_df["date_pulled"].dt.date == today]
 
+    batch_size = 8  # Adjust this value based on your system's capabilities
     summaries = []
 
-    for _, row in news_today.iterrows():
-        content = row["content"]
-        link = row["link"]
+    for i in range(0, len(news_today), batch_size):
+        batch = news_today.iloc[i : i + batch_size]
+        contents = batch["content"].tolist()
+        links = batch["link"].tolist()
+
         inputs = tokenizer(
-            [content],
+            contents,
             padding="max_length",
             truncation=True,
             max_length=512,
@@ -97,10 +94,11 @@ def get_todays_news_summary():
         )
         input_ids = inputs.input_ids.to(device)
         attention_mask = inputs.attention_mask.to(device)
-        output = model.generate(input_ids, attention_mask=attention_mask)
+        outputs = model.generate(input_ids, attention_mask=attention_mask)
 
-        summary = tokenizer.decode(output[0], skip_special_tokens=True)
-        summaries.append(f"- {summary} [source]({link})")
+        for output, link in zip(outputs, links):
+            summary = tokenizer.decode(output, skip_special_tokens=True)
+            summaries.append(f"- {summary} [link]({link}).")
 
     all_news_summary = "\n".join(summaries)
 
@@ -204,12 +202,14 @@ def main():
     st.image(wordcloud.to_array())
 
     st.markdown("## 📰 Noticias por fuente")
-    get_news_by_source()
+    with st.spinner("Calculando las noticias por fuente..."):
+        get_news_by_source()
 
     st.markdown("## 📰 Noticias del día")
     st.markdown("Te presentamos un resumen de las noticias del día.")
-    todays_news_summary = get_todays_news_summary()
-    st.markdown(todays_news_summary)
+    with st.spinner("Realizando el resumen de las noticias de hoy..."):
+        todays_news_summary = get_todays_news_summary()
+        st.markdown(todays_news_summary)
 
 
 if __name__ == "__main__":
