@@ -1,3 +1,4 @@
+import datetime
 import os
 from datetime import date
 
@@ -168,9 +169,17 @@ def main():
 
     db = db_connection()
 
-    neutral_news = db.news_news.count_documents({"sentiment": "Neutro"})
-    positive_news = db.news_news.count_documents({"sentiment": "Positivo"})
-    negative_news = db.news_news.count_documents({"sentiment": "Negativo"})
+    two_weeks_ago = datetime.datetime.now() - datetime.timedelta(weeks=2)
+
+    neutral_news = db.news_news.count_documents(
+        {"sentiment": "Neutro", "date_published": {"$gte": two_weeks_ago}}
+    )
+    positive_news = db.news_news.count_documents(
+        {"sentiment": "Positivo", "date_published": {"$gte": two_weeks_ago}}
+    )
+    negative_news = db.news_news.count_documents(
+        {"sentiment": "Negativo", "date_published": {"$gte": two_weeks_ago}}
+    )
 
     total_count = neutral_news + positive_news + negative_news
 
