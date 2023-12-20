@@ -158,7 +158,7 @@ def get_all_news():
     """
     db = db_connection()
     two_weeks_ago = datetime.datetime.now() - datetime.timedelta(weeks=2)
-    news_cursor = db.news_news.find({"published_date": {"$gte": two_weeks_ago}})
+    news_cursor = db.news_news.find({"date_published": {"$gte": two_weeks_ago}})
     news_df = pd.DataFrame(list(news_cursor))
     news_df["_id"] = news_df["_id"].astype(str)
     return news_df
@@ -228,7 +228,7 @@ def main():
     st.markdown("Te presentamos un resumen de algunas de las noticias de hoy:")
     with st.spinner("Realizando el resumen de las noticias de hoy..."):
         todays_news_summary = get_todays_news_summary()
-        st.markdown(todays_news_summary)
+    st.markdown(todays_news_summary)
 
 
 if __name__ == "__main__":
