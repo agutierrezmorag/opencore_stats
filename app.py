@@ -52,12 +52,15 @@ def get_news_by_source():
     news_df = get_all_news()
     news_df["logo"] = news_df["website"].map(logos)
 
+    news_by_source = news_df["logo"].value_counts().reset_index()
+    news_by_source.columns = ["logo", "count"]
+
     news_by_source = st.dataframe(
-        news_df[["logo", "website"]].value_counts(),
+        news_by_source,
         use_container_width=True,
+        hide_index=True,
         column_config={
-            "logo": st.column_config.ImageColumn("Logo", width="small"),
-            "website": "Nombre",
+            "logo": st.column_config.ImageColumn("Fuente", width="small"),
             "count": "Total",
         },
     )
