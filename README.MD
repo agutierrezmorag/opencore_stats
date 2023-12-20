@@ -42,12 +42,8 @@ Estadisticas del proyecto `openCore`. Taller de sistemas. UNAP 2023.
     pip install -r requirements.txt
     ```
 
-6. Crea una carpeta `.streamlit`.
-   ```shell
-   mkdir .streamlit
-   ```
+6. Mueve el archivo secrets.toml (disponible en los canales de comunicacion) a la carpeta `.streamlit`.
 
-7. Mueve el archivo secrets.toml (disponible en los canales de comunicacion) a la carpeta recien creada.
 ## Uso
 
 1. Ejecuta la aplicación Streamlit.
