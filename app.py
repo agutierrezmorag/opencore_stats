@@ -39,14 +39,14 @@ def get_news_by_source():
         DataFrame: A DataFrame containing the count of news articles by source.
     """
     logos = {
-        "adn": "https://opencore.onrender.com/static/img/source_logos/adn.png",
-        "chvn": "https://opencore.onrender.com/static/img/source_logos/chvn.png",
-        "cnn": "https://opencore.onrender.com/static/img/source_logos/cnn.png",
-        "dinamo": "https://opencore.onrender.com/static/img/source_logos/dinamo.png",
-        "elmostrador": "https://opencore.onrender.com/static/img/source_logos/elmostrador.png",
-        "latercera": "https://opencore.onrender.com/static/img/source_logos/latercera.png",
-        "meganoticias": "https://opencore.onrender.com/static/img/source_logos/meganoticias.png",
-        "t13": "https://opencore.onrender.com/static/img/source_logos/t13.png",
+        "adn": "app/static/adn.png",
+        "chvn": "app/static/chvn.png",
+        "cnn": "app/static/cnn.png",
+        "dinamo": "app/static/dinamo.png",
+        "elmostrador": "app/static/elmostrador.png",
+        "latercera": "app/static/latercera.png",
+        "meganoticias": "app/static/meganoticias.png",
+        "t13": "app/static/t13.png",
     }
 
     news_df = get_all_news()
@@ -65,7 +65,7 @@ def get_news_by_source():
     return news_by_source
 
 
-@st.cache_resource(ttl=60 * 60 * 24)
+@st.cache_resource(ttl=60 * 60 * 24, show_spinner=False)
 def get_todays_news_summary():
     """
     Retrieves today's news from a DataFrame and generates a summary for each news article using a pre-trained BERT model.
