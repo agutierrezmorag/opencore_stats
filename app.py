@@ -84,7 +84,7 @@ def get_todays_news_summary():
 
     news_today = news_df[news_df["date_pulled"].dt.date == today]
 
-    news_today = news_today.sample(n=3)
+    news_today = news_today.head(3)
 
     summaries = []
 
