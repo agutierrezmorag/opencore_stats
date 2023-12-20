@@ -150,13 +150,14 @@ def calc_wordcloud():
 @st.cache_resource(ttl=60 * 60 * 24)
 def get_all_news():
     """
-    Retrieves all news from the database and returns them as a DataFrame.
+    Retrieves all news from the database from the last two weeks and returns them as a DataFrame.
 
     Returns:
-        pandas.DataFrame: A DataFrame containing all the news.
+        pandas.DataFrame: A DataFrame containing all the news from the last two weeks.
     """
     db = db_connection()
-    news_cursor = db.news_news.find()
+    two_weeks_ago = datetime.datetime.now() - datetime.timedelta(weeks=2)
+    news_cursor = db.news_news.find({"published_date": {"$gte": two_weeks_ago}})
     news_df = pd.DataFrame(list(news_cursor))
     news_df["_id"] = news_df["_id"].astype(str)
     return news_df
