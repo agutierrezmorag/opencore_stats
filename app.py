@@ -104,7 +104,7 @@ def get_todays_news_summary():
         output = model.generate(input_ids, attention_mask=attention_mask)[0]
 
         summary = tokenizer.decode(output, skip_special_tokens=True)
-        summaries.append(f"- {summary} ([Fuente]({link}).)")
+        summaries.append(f"- {summary}. ([Fuente]({link})).")
 
     all_news_summary = "\n".join(summaries)
 
@@ -212,7 +212,7 @@ def main():
         get_news_by_source()
 
     st.markdown("## 📰 Noticias del día")
-    st.markdown("Te presentamos un resumen de las noticias del día.")
+    st.markdown("Te presentamos un resumen de algunas de las noticias de hoy:")
     with st.spinner("Realizando el resumen de las noticias de hoy..."):
         todays_news_summary = get_todays_news_summary()
         st.markdown(todays_news_summary)
