@@ -167,6 +167,14 @@ def get_all_news():
 def main():
     st.set_page_config(page_title="OpenCore Stats", page_icon="🧊")
 
+    hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            </style>
+            """
+    st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
     db = db_connection()
 
     two_weeks_ago = datetime.datetime.now() - datetime.timedelta(weeks=2)
