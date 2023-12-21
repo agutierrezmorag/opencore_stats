@@ -5,11 +5,13 @@ from datetime import date
 import matplotlib.pyplot as plt
 import nltk
 import pandas as pd
+import plotly.express as px
 import streamlit as st
 import torch
 from nltk.corpus import stopwords
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
+from sklearn.feature_extraction.text import CountVectorizer
 from transformers import BertTokenizerFast, EncoderDecoderModel, pipeline
 from wordcloud import WordCloud
 
@@ -115,6 +117,25 @@ def get_todays_news_summary():
     return all_news_summary
 
 
+@st.cache_data(ttl=60 * 60 * 24)
+def get_stop_words():
+    """
+    Retrieves a set of stop words for the Spanish language.
+
+    Returns:
+        set: A set of stop words.
+    """
+    nltk.data.path.append(st.secrets.nltk.download_path)
+    nltk.download("stopwords", download_dir=st.secrets.nltk.download_path)
+
+    stop_words = set(stopwords.words("spanish"))
+    with open("additional_stopwords.txt", "r", encoding="utf-8") as f:
+        additional_stop_words = [word.strip() for word in f.readlines()]
+    stop_words.update(additional_stop_words)
+
+    return stop_words
+
+
 @st.cache_resource(ttl=60 * 60 * 24)
 def calc_wordcloud():
     """
@@ -123,18 +144,12 @@ def calc_wordcloud():
     Returns:
         wordcloud (WordCloud): The generated word cloud object.
     """
-    nltk.data.path.append(st.secrets.nltk.download_path)
-    nltk.download("stopwords", download_dir=st.secrets.nltk.download_path)
     db = db_connection()
     news_df = get_all_news()
 
     text = " ".join(news_df["content"])
 
-    stop_words = set(stopwords.words("spanish"))
-    with open("additional_stopwords.txt", "r", encoding="utf-8") as f:
-        additional_stop_words = [word.strip() for word in f.readlines()]
-
-    stop_words.update(additional_stop_words)
+    stop_words = get_stop_words()
 
     wordcloud = WordCloud(
         stopwords=stop_words,
@@ -146,6 +161,102 @@ def calc_wordcloud():
     ).generate(text)
 
     return wordcloud
+
+
+@st.cache_resource(ttl=60 * 60 * 24)
+def display_news_metrics():
+    db = db_connection()
+    two_weeks_ago = datetime.datetime.now() - datetime.timedelta(weeks=2)
+    neutral_news = db.news_news.count_documents(
+        {"sentiment": "Neutro", "date_published": {"$gte": two_weeks_ago}}
+    )
+    positive_news = db.news_news.count_documents(
+        {"sentiment": "Positivo", "date_published": {"$gte": two_weeks_ago}}
+    )
+    negative_news = db.news_news.count_documents(
+        {"sentiment": "Negativo", "date_published": {"$gte": two_weeks_ago}}
+    )
+
+    total_count = neutral_news + positive_news + negative_news
+
+    neutral_percentage = (neutral_news / total_count) * 100
+    positive_percentage = (positive_news / total_count) * 100
+    negative_percentage = (negative_news / total_count) * 100
+
+    st.markdown("## 📝 Noticias")
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.metric(
+            label="🟩 Positivas",
+            value=positive_news,
+        )
+    with col2:
+        st.metric(
+            label="➖ Neutrales",
+            value=neutral_news,
+        )
+    with col3:
+        st.metric(
+            label="🟥 Negativas",
+            value=negative_news,
+        )
+
+    df = pd.DataFrame(
+        {
+            "Analisis de sentimiento": ["Positivas", "Neutrales", "Negativas"],
+            "Porcentaje": [
+                positive_percentage,
+                neutral_percentage,
+                negative_percentage,
+            ],
+        }
+    )
+
+    color_map = {
+        "Positivas": "#008000ba",
+        "Neutrales": "#98989b8f",
+        "Negativas": "#d34040",
+    }
+
+    fig = px.pie(
+        df,
+        values="Porcentaje",
+        names="Analisis de sentimiento",
+        color="Analisis de sentimiento",
+        color_discrete_map=color_map,
+    )
+
+    st.plotly_chart(fig)
+
+
+@st.cache_data(ttl=60 * 60 * 24)
+def calc_trending_topics(n=10):
+    """
+    Calculate the trending topics based on the content of news articles.
+
+    Parameters:
+    n (int): The number of trending topics to return. Default is 10.
+
+    Returns:
+    pandas.DataFrame: A DataFrame containing the trending topics and their frequencies.
+    """
+    news_df = get_all_news()
+    text = " ".join(news_df["content"])
+    stop_words = get_stop_words()
+
+    vectorizer = CountVectorizer(stop_words=list(stop_words))
+
+    word_freq = vectorizer.fit_transform([text])
+
+    words = vectorizer.get_feature_names_out()
+    frequencies = word_freq.toarray().flatten()
+
+    word_freq_df = pd.DataFrame({"Palabra": words, "Frecuencia": frequencies})
+    word_freq_df = word_freq_df.sort_values("Frecuencia", ascending=False)
+
+    return word_freq_df.head(n)
 
 
 @st.cache_resource(ttl=60 * 60 * 24)
@@ -165,72 +276,29 @@ def get_all_news():
 
 
 def main():
-    st.set_page_config(page_title="OpenCore Stats", page_icon="🧊")
-
-    hide_streamlit_style = """
-            <style>
-            #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
-            </style>
-            """
-    st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-
-    db = db_connection()
-
-    two_weeks_ago = datetime.datetime.now() - datetime.timedelta(weeks=2)
-
-    neutral_news = db.news_news.count_documents(
-        {"sentiment": "Neutro", "date_published": {"$gte": two_weeks_ago}}
-    )
-    positive_news = db.news_news.count_documents(
-        {"sentiment": "Positivo", "date_published": {"$gte": two_weeks_ago}}
-    )
-    negative_news = db.news_news.count_documents(
-        {"sentiment": "Negativo", "date_published": {"$gte": two_weeks_ago}}
+    st.set_page_config(
+        page_title="OpenCore Stats",
+        page_icon="🧊",
+        layout="wide",
     )
 
-    total_count = neutral_news + positive_news + negative_news
-
-    neutral_percentage = (neutral_news / total_count) * 100
-    positive_percentage = (positive_news / total_count) * 100
-    negative_percentage = (negative_news / total_count) * 100
-
-    st.markdown("## 📝 Noticias")
-
-    _, col1, col2, col3, _ = st.columns([0.5, 1, 1, 1, 0.5])
-
+    col1, col2 = st.columns(2)
     with col1:
-        st.metric(
-            label="🟩 Positivas",
-            value=positive_news,
-        )
+        display_news_metrics()
     with col2:
-        st.metric(
-            label="➖ Neutrales",
-            value=neutral_news,
-        )
+        st.markdown("## 📰 Noticias por fuente")
+        with st.spinner("Calculando las noticias por fuente..."):
+            get_news_by_source()
+
+    st.markdown("## 📈 Las palabras mas comunes")
+    col3, col4 = st.columns(2)
     with col3:
-        st.metric(
-            label="🟥 Negativas",
-            value=negative_news,
-        )
+        wordcloud = calc_wordcloud()
+        st.image(wordcloud.to_array())
 
-    st.markdown("## 📊 Gráfica")
-    st.bar_chart(
-        {
-            "Positivas": positive_percentage,
-            "Neutrales": neutral_percentage,
-            "Negativas": negative_percentage,
-        }
-    )
-
-    st.markdown("## ☁️ Word Cloud")
-    wordcloud = calc_wordcloud()
-    st.image(wordcloud.to_array())
-
-    st.markdown("## 📰 Noticias por fuente")
-    with st.spinner("Calculando las noticias por fuente..."):
-        get_news_by_source()
+    with col4:
+        trending_topics = calc_trending_topics()
+        st.dataframe(trending_topics, hide_index=True, use_container_width=True)
 
     st.markdown("## 📰 Noticias del día")
     st.markdown("Te presentamos un resumen de algunas de las noticias de hoy:")
