@@ -116,6 +116,9 @@ def calc_wordcloud():
 
 @st.cache_resource(ttl=60 * 60 * 24)
 def display_news_metrics():
+    """
+    Displays news metrics including counts and percentages of positive, neutral, and negative news.
+    """
     db = db_connection()
     two_weeks_ago = datetime.datetime.now() - datetime.timedelta(weeks=2)
     neutral_news = db.news_news.count_documents(
@@ -250,6 +253,9 @@ def main():
     with col4:
         trending_topics = calc_trending_topics()
         st.dataframe(trending_topics, hide_index=True, use_container_width=True)
+
+    st.divider()
+    st.caption("*_Solo se consideran las noticias de los ultimos 14 dias._")
 
 
 if __name__ == "__main__":
