@@ -138,6 +138,7 @@ def display_news_metrics():
     negative_percentage = (negative_news / total_count) * 100
 
     st.markdown("## 📝 Noticias")
+    st.caption("Estadisticas de todas las noticias.")
 
     col1, col2, col3 = st.columns(3)
 
@@ -213,6 +214,26 @@ def calc_trending_topics(n=10):
     return word_freq_df.head(n)
 
 
+def get_word_frequency_over_time(word):
+    """
+    Retrieves the frequency of a specified word in the news articles over time.
+
+    Parameters:
+    word (str): The word to track.
+
+    Returns:
+    pandas.DataFrame: A DataFrame containing the date and count of articles containing the word for each date.
+    """
+    news_df = get_all_news()
+    news_df["content"] = news_df["content"].str.lower()
+
+    word = word.lower()
+    news_df = news_df[news_df["content"].str.contains(word)]
+    word_frequency = news_df.groupby("date_published").size().reset_index(name="count")
+
+    return word_frequency
+
+
 @st.cache_resource(ttl=60 * 60 * 24)
 def get_all_news():
     """
@@ -226,6 +247,8 @@ def get_all_news():
     news_cursor = db.news_news.find({"date_published": {"$gte": two_weeks_ago}})
     news_df = pd.DataFrame(list(news_cursor))
     news_df["_id"] = news_df["_id"].astype(str)
+    news_df["date_published"] = pd.to_datetime(news_df["date_published"])
+
     return news_df
 
 
@@ -240,11 +263,33 @@ def main():
     with col1:
         display_news_metrics()
     with col2:
-        st.markdown("## 📰 Noticias por fuente")
-        with st.spinner("Calculando las noticias por fuente..."):
-            get_news_by_source()
+        st.markdown("## 📈 Frecuencia de palabras por dia")
+        st.caption(
+            "Realiza un seguimiento de la frecuencia de las palabras en las noticias a lo largo del tiempo."
+        )
+        words_string = st.text_input("Palabras a buscar, separadas por espacios")
+        words = words_string.split()
 
-    st.markdown("## 📈 Las palabras mas comunes")
+        if words:
+            frequency_df = pd.DataFrame()
+            for word in words:
+                word_frequency = get_word_frequency_over_time(word)
+                word_frequency["word"] = word
+                frequency_df = pd.concat([frequency_df, word_frequency])
+            fig = px.line(
+                frequency_df,
+                x="date_published",
+                y="count",
+                color="word",
+            )
+            fig.update_layout(
+                xaxis_title="Fecha de publicación",
+                yaxis_title="Conteo",
+            )
+            st.plotly_chart(fig)
+
+    st.markdown("## 📈 Trending topics")
+    st.caption("Las palabras mas comunes presentes en las noticias.")
     col3, col4 = st.columns(2)
     with col3:
         wordcloud = calc_wordcloud()
@@ -254,8 +299,12 @@ def main():
         trending_topics = calc_trending_topics()
         st.dataframe(trending_topics, hide_index=True, use_container_width=True)
 
+    st.markdown("## 📰 Noticias por fuente")
+    with st.spinner("Calculando las noticias por fuente..."):
+        get_news_by_source()
+
     st.divider()
-    st.caption("*_Solo se consideran las noticias de los ultimos 14 dias._")
+    st.caption("*_Estos datos solo consideran las noticias de los ultimos 14 dias._")
 
 
 if __name__ == "__main__":
