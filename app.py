@@ -263,7 +263,7 @@ def main():
         """
         <style>
         .embeddedAppMetaInfoBar_container__DxxL1 {
-            display: none;
+            display: none !important;
         }
         </style>
         """,
