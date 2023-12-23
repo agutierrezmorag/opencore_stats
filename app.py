@@ -30,7 +30,7 @@ def db_connection():
         st.error(e)
 
 
-@st.cache_resource(ttl=60 * 60 * 24)
+@st.cache_resource(ttl=60 * 60 * 8)
 def get_news_by_source():
     """
     Retrieves news data from various sources and displays the count of news articles by source.
@@ -68,7 +68,6 @@ def get_news_by_source():
     return news_by_source
 
 
-@st.cache_resource(ttl=60 * 60 * 8)
 def get_stop_words():
     """
     Retrieves a set of stop words for the Spanish language.
@@ -87,7 +86,7 @@ def get_stop_words():
     return stop_words
 
 
-@st.cache_resource(ttl=60 * 60 * 24)
+@st.cache_resource(ttl=60 * 60 * 8)
 def calc_wordcloud():
     """
     Calculates and returns a word cloud based on the content of news articles.
@@ -114,7 +113,7 @@ def calc_wordcloud():
     return wordcloud
 
 
-@st.cache_resource(ttl=60 * 60 * 24)
+@st.cache_resource(ttl=60 * 60 * 8)
 def display_news_metrics():
     """
     Displays news metrics including counts and percentages of positive, neutral, and negative news.
