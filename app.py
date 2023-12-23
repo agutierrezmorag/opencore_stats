@@ -257,16 +257,14 @@ def main():
         layout="wide",
     )
 
-    st.markdown(
-        """
-        <style>
-        .embeddedAppMetaInfoBar_container__DxxL1 {
-            display: none !important;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
+    delete_footer = """
+                    <style>
+                    .embeddedAppMetaInfoBar_container__DxxL1 {
+                        visibility: hidden !important;
+                    }
+                    </style>
+                    """
+    st.markdown(delete_footer, unsafe_allow_html=True)
 
     col1, col2 = st.columns(2)
     with col1:
