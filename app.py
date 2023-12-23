@@ -113,7 +113,6 @@ def calc_wordcloud():
     return wordcloud
 
 
-@st.cache_resource(ttl=60 * 60 * 8)
 def display_news_metrics():
     """
     Displays news metrics including counts and percentages of positive, neutral, and negative news.
