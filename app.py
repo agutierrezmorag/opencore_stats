@@ -68,7 +68,7 @@ def get_news_by_source():
     return news_by_source
 
 
-@st.cache_data(ttl=60 * 60 * 24)
+@st.cache_resource(ttl=60 * 60 * 8)
 def get_stop_words():
     """
     Retrieves a set of stop words for the Spanish language.
@@ -186,7 +186,7 @@ def display_news_metrics():
     st.plotly_chart(fig)
 
 
-@st.cache_data(ttl=60 * 60 * 24)
+@st.cache_resource(ttl=60 * 60 * 8)
 def calc_trending_topics(n=10):
     """
     Calculate the trending topics based on the content of news articles.
@@ -234,7 +234,7 @@ def get_word_frequency_over_time(word):
     return word_frequency
 
 
-@st.cache_resource(ttl=60 * 60 * 24)
+@st.cache_resource(ttl=60 * 60 * 8)
 def get_all_news():
     """
     Retrieves all news from the database from the last two weeks and returns them as a DataFrame.
